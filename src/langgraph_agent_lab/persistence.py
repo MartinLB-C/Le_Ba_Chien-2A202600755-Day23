@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
 import sqlite3
+from typing import Any
+
 
 def build_checkpointer(kind: str = "memory", database_url: str | None = None) -> Any | None:
     """Return a LangGraph checkpointer."""

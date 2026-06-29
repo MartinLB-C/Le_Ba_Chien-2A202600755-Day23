@@ -4,29 +4,29 @@ from __future__ import annotations
 
 from typing import Any
 
-from langgraph.graph import StateGraph, START, END
-from .state import AgentState
+from langgraph.graph import END, START, StateGraph
 
 from .nodes import (
-    intake_node,
-    classify_node,
-    tool_node,
-    evaluate_node,
     answer_node,
-    ask_clarification_node,
-    risky_action_node,
     approval_node,
-    retry_or_fallback_node,
+    ask_clarification_node,
+    classify_node,
     dead_letter_node,
-    finalize_node
+    evaluate_node,
+    finalize_node,
+    intake_node,
+    retry_or_fallback_node,
+    risky_action_node,
+    tool_node,
 )
-
 from .routing import (
+    route_after_approval,
     route_after_classify,
     route_after_evaluate,
     route_after_retry,
-    route_after_approval
 )
+from .state import AgentState
+
 
 def build_graph(checkpointer: Any | None = None):
     """Build and compile the LangGraph workflow."""

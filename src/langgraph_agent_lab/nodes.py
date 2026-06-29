@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import os
-from pydantic import BaseModel, Field
 from typing import Literal
 
-from .state import AgentState, make_event
+from pydantic import BaseModel, Field
+
 from .llm import get_llm
+from .state import AgentState, make_event
+
 
 def intake_node(state: AgentState) -> dict:
     """Normalize raw query. This node is provided as a working example."""
@@ -20,7 +22,11 @@ def intake_node(state: AgentState) -> dict:
 
 class RouteClassification(BaseModel):
     route: Literal["simple", "tool", "missing_info", "risky", "error"] = Field(
-        description="Classify the query into one of the following routes: risky, tool, missing_info, error, simple. Priority: risky > tool > missing_info > error > simple"
+        description=(
+            "Classify the query into one of these routes: risky, tool, "
+            "missing_info, error, simple. Priority: risky > tool > "
+            "missing_info > error > simple"
+        )
     )
 
 def classify_node(state: AgentState) -> dict:
@@ -44,7 +50,7 @@ def classify_node(state: AgentState) -> dict:
     try:
         classification = llm.invoke(prompt)
         route = classification.route
-    except Exception as e:
+    except Exception:
         # Fallback in case of parsing errors
         route = "simple"
 
@@ -81,10 +87,11 @@ def evaluate_node(state: AgentState) -> dict:
     
     # LLM-as-judge
     llm = get_llm().with_structured_output(EvaluationResult)
-    prompt = f"""
-    Evaluate the following tool result. If it contains an error or failure message, it needs retry. Otherwise it is a success.
-    Tool result: {latest_result}
-    """
+    prompt = (
+        "Evaluate the following tool result. If it contains an error or "
+        "failure message, it needs retry. Otherwise it is a success.\n"
+        f"Tool result: {latest_result}"
+    )
     try:
         eval_result = llm.invoke(prompt).evaluation
     except Exception:

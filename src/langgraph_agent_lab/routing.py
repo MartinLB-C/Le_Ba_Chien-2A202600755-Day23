@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .state import AgentState
 
+
 def route_after_classify(state: AgentState) -> str:
     """Map classified route to the next graph node."""
     route = state.get("route", "")

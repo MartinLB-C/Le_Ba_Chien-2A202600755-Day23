@@ -19,14 +19,16 @@
 | S07_dead_letter | error | error | ✅ | 0 | 5 |
 
 ## 3. Architecture Explanation
-The graph is designed as a StateGraph with 11 distinct nodes. The state schema (`AgentState`) extends `TypedDict` to hold append-only fields like `events` and `errors`, while keeping mutable fields for routing (`route`, `attempt`, `evaluation_result`).
-Routing relies on the outputs of the nodes. Specifically, the `classify_node` uses an LLM to enforce the priority rules and outputs a route. A retry loop is enforced via the `evaluate_node`, which dynamically checks tool outputs to decide if the graph needs to loop back to `tool_node` or proceed to `dead_letter` when attempt limits are reached.
+The graph is a `StateGraph` consisting of 11 distinct nodes. The `AgentState` uses `TypedDict` for mutable routing fields (`route`, `attempt`, `evaluation_result`) and `Annotated` lists for append-only logs (`events`, `errors`).
+The core intelligence lies in the `classify_node`, which leverages `.with_structured_output` to enforce an LLM to output exactly one of five routes. The system supports Human-in-the-Loop (`approval`) and implements a bounded retry loop (`evaluate_node` -> `tool` / `dead_letter`) to prevent infinite looping.
 
 ## 4. Failure Analysis
-1. **Unbounded Retry Loops**: We handle this by tracking the `attempt` counter in the state. Once `attempt >= max_attempts`, the conditional edge routes to `dead_letter`, ensuring the graph terminates.
-2. **LLM Hallucinations on Classification**: By using `.with_structured_output`, we enforce that the LLM returns exactly one of the valid enums. This prevents the routing from crashing due to unexpected strings.
+During execution with the **Alibaba (Qwen)** model, the workflow achieved an 85.71% success rate. The only failure occurred in **S03_missing** ('Can you fix it?').
+- **Issue**: The model classified the query as `error` instead of `missing_info`.
+- **Root Cause**: The word 'fix' heavily biases the LLM toward system issues (`error`), overriding the fact that the query is overly vague (`missing_info`).
+- **Impact**: The system proceeds to the `error` retry loop instead of asking the user to clarify what needs fixing.
 
 ## 5. Improvement Plan
-- Implement parallel fan-out for multiple tool calls by using the `Send()` API.
-- Utilize a more robust evaluator (LLM-as-judge) for the tool output instead of simple string heuristic.
-- Add comprehensive unit tests covering edge cases like token limits and context window exhaustion.
+1. **Prompt Engineering in Classify Node**: Update the priority rules in `classify_node` to explicitly instruct the LLM: *'If a query asks to fix something but does not specify WHAT to fix, classify it as missing_info, not error.'*
+2. **Parallel Tool Execution**: Currently, the system assumes a single tool execution. Expanding the `tool_node` to use the `Send()` API would allow parallel fan-out for complex queries.
+3. **Dynamic LLM-as-Judge**: Improve `evaluate_node` to pass the original user query alongside the tool output, giving the LLM more context to evaluate success.

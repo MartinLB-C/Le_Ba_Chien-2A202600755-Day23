@@ -13,9 +13,10 @@ def route_after_classify(state: AgentState) -> str:
         "tool": "tool",
         "missing_info": "clarify",
         "risky": "risky_action",
-        "error": "retry"
+        "error": "retry",
     }
     return mapping.get(route, "answer")
+
 
 def route_after_evaluate(state: AgentState) -> str:
     """Decide if tool result is satisfactory or needs retry."""
@@ -24,20 +25,22 @@ def route_after_evaluate(state: AgentState) -> str:
         return "retry"
     return "answer"
 
+
 def route_after_retry(state: AgentState) -> str:
     """Decide whether to retry the tool or give up."""
     attempt = state.get("attempt", 0)
     max_attempts = state.get("max_attempts", 3)
-    
+
     if attempt < max_attempts:
         return "tool"
     return "dead_letter"
+
 
 def route_after_approval(state: AgentState) -> str:
     """Route based on human approval decision."""
     approval = state.get("approval", {})
     approved = approval.get("approved", False)
-    
+
     if approved:
         return "tool"
     return "clarify"

@@ -16,7 +16,7 @@ import os
 from dotenv import load_dotenv
 
 
-def get_llm(model: str | None = None, temperature: float = 0.0):
+def get_llm(model: str | None = None, temperature: float = 0.0):  # noqa: ANN201
     """Create an LLM client from environment configuration.
 
     Checks for API keys in this order:
@@ -28,7 +28,7 @@ def get_llm(model: str | None = None, temperature: float = 0.0):
     Override model with the `model` parameter or LLM_MODEL env var.
     """
     load_dotenv()
-    
+
     if os.getenv("DASHSCOPE_API_KEY"):
         try:
             from langchain_openai import ChatOpenAI
@@ -37,7 +37,9 @@ def get_llm(model: str | None = None, temperature: float = 0.0):
         return ChatOpenAI(
             model=model or os.getenv("LLM_MODEL", "qwen-plus"),
             api_key=os.getenv("DASHSCOPE_API_KEY"),
-            base_url=os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+            base_url=os.getenv(
+                "DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            ),
             temperature=temperature,
         )
     if os.getenv("GEMINI_API_KEY"):
@@ -72,6 +74,7 @@ def get_llm(model: str | None = None, temperature: float = 0.0):
         )
 
     raise RuntimeError(
-        "No LLM API key found. Set DASHSCOPE_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY in .env\n"
+        "No LLM API key found. Set DASHSCOPE_API_KEY, GEMINI_API_KEY, "
+        "OPENAI_API_KEY, or ANTHROPIC_API_KEY in .env\n"
         "See .env.example for configuration."
     )

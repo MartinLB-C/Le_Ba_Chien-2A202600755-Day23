@@ -53,8 +53,10 @@ class AgentState(TypedDict, total=False):
     attempt: int
     max_attempts: int
     final_answer: str | None
-    # TODO(student): you will need additional fields for clarification, risky actions,
-    # approval decisions, and retry-loop gating. Add them as you implement nodes.
+    evaluation_result: str
+    pending_question: str
+    proposed_action: str
+    approval: dict[str, Any]
     # Hint: check what your nodes return and what your routing functions read.
     messages: Annotated[list[str], add]
     tool_results: Annotated[list[str], add]
@@ -90,6 +92,10 @@ def initial_state(scenario: Scenario) -> AgentState:
         "attempt": 0,
         "max_attempts": scenario.max_attempts,
         "final_answer": None,
+        "evaluation_result": "",
+        "pending_question": "",
+        "proposed_action": "",
+        "approval": {},
         "messages": [],
         "tool_results": [],
         "errors": [],
